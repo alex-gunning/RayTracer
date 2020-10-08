@@ -146,9 +146,9 @@ fun main() {
     val cameraOrigin = Vector(0.0, 0.0, 0.0)
     val viewPlaneAngles = Scene.buildViewPlaneAngles(pixDimension = requiredPixelDimension, pixelSize = 0.0015)
     val triangularObject = Triangle(
-        Point(0.0, 0.25, 2.0),
-        Point(-0.5, -0.5, 1.0),
-        Point(0.5, -0.5, 1.0)
+        Point(0.0, 0.25, 1.0),
+        Point(-0.5, -0.5, 1.5),
+        Point(0.5, -0.5, 2.0)
     )
     val intersections = viewPlaneAngles.map { row ->
         row.map { Scene.intersectionPointDelta(triangularObject, cameraOrigin, it) }.zip(row)
