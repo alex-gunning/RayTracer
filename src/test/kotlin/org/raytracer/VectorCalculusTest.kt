@@ -7,24 +7,32 @@ import org.junit.jupiter.api.Test
 class VectorCalculusTest {
     @Test
     @DisplayName("Point works with unary minus")
-    fun vertexUnaryMinus() {
+    fun pointUnaryMinus() {
         val p = Point(x = 1.0, y = 2.0, z = 3.0)
         assert((-p).equals(Point(-1.0, -2.0, -3.0)))
     }
 
     @Test
     @DisplayName("Point works with plus")
-    fun vertexPlus() {
+    fun pointPlus() {
         val p = Point(1.0, 2.0, 3.0)
         assert((p + p).equals(Point(2.0, 4.0, 6.0)))
     }
 
     @Test
     @DisplayName("Point works with minus")
-    fun vertexMinus() {
+    fun pointMinus() {
         val a = Point(1.0, 2.0, 3.0)
         val b = Point(2.0, 1.0, 3.0)
         assert((a - b).equals(Point(-1.0, 1.0, 0.0)))
+    }
+
+    @Test
+    @DisplayName("Can find the distance between two points")
+    fun pointDistance() {
+        val a = Point(2.0, 2.0, 3.0)
+        val b = Point(2.0, 0.0, 3.0)
+        assertEquals(a.distanceTo(b), 2.0, 0.0)
     }
 
     @Test

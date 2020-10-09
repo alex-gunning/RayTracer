@@ -1,12 +1,19 @@
 package org.raytracer
 
+import java.lang.Math.pow
 import kotlin.math.cos
+import kotlin.math.pow
 import kotlin.math.sin
 
 data class Point(val x: Double, val y: Double, val z: Double) {
     operator fun unaryMinus() = Point(-x, -y, -z)
     operator fun plus(other: Point) = Point(x + other.x, y + other.y, z + other.z)
     operator fun minus(other: Point) = Point(x - other.x, y - other.y, z - other.z)
+    fun distanceTo(other: Point): Double = kotlin.math.sqrt(
+        (this.x - other.x).pow(2) +
+           (this.y - other.y).pow(2) +
+           (this.z - other.z).pow(2)
+    )
 }
 
 typealias Vector = Point // A vertex with starting point at the origin.
