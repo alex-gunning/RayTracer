@@ -1,6 +1,7 @@
 ## Ray-Tracer
 A ray-tracer implementation written in a loop and so can function as a graphics engine.
 
+Try it for yourself. Clone the repo and look around :)
 
 ![Triangles](https://raw.githubusercontent.com/alex-gunning/RayTracer/master/images/traced-triangles.png)
 
