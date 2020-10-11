@@ -1,24 +1,23 @@
 package org.raytracer
 
-import java.lang.Math.pow
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
 
-data class Point(val x: Double, val y: Double, val z: Double) {
+data class Point(val x: Float, val y: Float, val z: Float) {
     operator fun unaryMinus() = Point(-x, -y, -z)
     operator fun plus(other: Point) = Point(x + other.x, y + other.y, z + other.z)
     operator fun minus(other: Point) = Point(x - other.x, y - other.y, z - other.z)
-    fun distanceTo(other: Point): Double = kotlin.math.sqrt(
+    fun distanceTo(other: Point): Float = kotlin.math.sqrt(
         (this.x - other.x).pow(2) +
-           (this.y - other.y).pow(2) +
-           (this.z - other.z).pow(2)
+                (this.y - other.y).pow(2) +
+                (this.z - other.z).pow(2)
     )
 }
 
 typealias Vector = Point // A vertex with starting point at the origin.
 
-fun Vector.dot(other: Vector): Double =
+fun Vector.dot(other: Vector): Float =
     x * other.x + y * other.y + z * other.z
 
 fun Vector.cross(other: Vector): Vector =
@@ -28,9 +27,9 @@ fun Vector.cross(other: Vector): Vector =
         z = (x * other.y) - (y * other.x)
     )
 
-fun Vector.length(): Double = kotlin.math.sqrt(this.dot(this))
+fun Vector.length(): Float = kotlin.math.sqrt(this.dot(this))
 
-fun degreesToRadians(degrees: Int): Double = Math.PI / 180 * degrees
+fun degreesToRadians(degrees: Int): Float = (Math.PI / 180 * degrees).toFloat()
 
 fun Vector.rotY(thetaDegrees: Int): Vector {
     val thetaRadians = degreesToRadians(thetaDegrees)
@@ -51,7 +50,7 @@ fun Vector.rotX(thetaDegrees: Int): Vector {
 }
 
 data class Line(val p1: Point, val p2: Point) {
-    fun length(): Double {
+    fun length(): Float {
         val v1: Vector = p2 - p1
         return v1.length()
     }
@@ -65,5 +64,5 @@ data class Triangle(val p1: Point, val p2: Point, val p3: Point) {
         return v1.cross(v2)
     }
     // Plane constant "k"
-    fun k(): Double = -(this.normal().dot(p1))
+    fun k(): Float = -(this.normal().dot(p1))
 }
