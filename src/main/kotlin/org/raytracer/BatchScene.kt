@@ -82,7 +82,7 @@ class BatchScene {
 
             val v1x = v1.x
             val v1y = v1.y
-            val v1z = v1.x
+            val v1z = v1.z
 
             val v2x = v2.x
             val v2y = v2.y
@@ -122,6 +122,8 @@ class BatchScene {
                     val idx = (IDx + IDy * getGlobalSize(0))
 
                     // Calc params for a{1,2,3} calculations
+
+                    // Params
                     val a1x = intersectionsX[idx] - triangleP3X
                     val a1y = intersectionsY[idx] - triangleP3Y
                     val a1z = intersectionsZ[idx] - triangleP3Z
@@ -134,23 +136,26 @@ class BatchScene {
                     val a3y = intersectionsY[idx] - triangleP2Y
                     val a3z = intersectionsZ[idx] - triangleP2Z
 
+                    // Cross product components {X,Y,Z}
                     val a1crossX = (v1y * a1z) - (v1z * a1y)
-                    val a1crossY = -((v1x * a1x) - (v1z * a1x))
+                    val a1crossY = -((v1x * a1z) - (v1z * a1x))
                     val a1crossZ = (v1x * a1y) - (v1y * a1x)
 
                     val a2crossX = (v2y * a2z) - (v2z * a2y)
-                    val a2crossY = -((v2x * a2x) - (v2z * a2x))
+                    val a2crossY = -((v2x * a2z) - (v2z * a2x))
                     val a2crossZ = (v2x * a2y) - (v2y * a2x)
 
                     val a3crossX = (v3y * a3z) - (v3z * a3y)
-                    val a3crossY = -((v3x * a3x) - (v3z * a3x))
+                    val a3crossY = -((v3x * a3z) - (v3z * a3x))
                     val a3crossZ = (v3x * a3y) - (v3y * a3x)
 
+                    // Dot products
                     val c1 = a1crossX * b1x + a1crossY * b1y + a1crossZ * b1z
                     val c2 = a2crossX * b2x + a2crossY * b2y + a2crossZ * b2z
                     val c3 = a3crossX * b3x + a3crossY * b3y + a3crossZ * b3z
 
                     if (c1 >= 0 && c2 >= 0 && c3 >= 0) {
+                        // Distance formula sqrt((x - y) ^ 2 + ..))
                         val x = (cameraOriginX - intersectionsX[idx]) * (cameraOriginX - intersectionsX[idx])
                         val y = (cameraOriginY - intersectionsY[idx]) * (cameraOriginY - intersectionsY[idx])
                         val z = (cameraOriginZ - intersectionsZ[idx]) * (cameraOriginZ - intersectionsZ[idx])

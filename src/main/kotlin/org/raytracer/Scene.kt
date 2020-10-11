@@ -21,25 +21,25 @@ class Scene(
         viewPlane: Array<Array<Vector>>,
         drawable: Drawable
     ): Pair<Array<Array<Float>>, RGBColour> {
-//        val intersections =
-//            BatchScene.calcIntersectionPoints(drawable.coordinates, viewPlane, cameraOrigin)
-//        val pixelIntensities = BatchScene.framebufferForTriangle(drawable.coordinates, intersections, cameraOrigin)
-        val intersections = viewPlane.map { row ->
-            row.map { Scene.intersectionPointDelta(drawable.coordinates, cameraOrigin, it) }.zip(row)
-        }.map { row ->
-            row.map { Scene.intersectionPoint(it.first, it.second, cameraOrigin) }
-        }
-        val bounds = intersections.map { row ->
-            row.map { Scene.isWithinBounds(drawable.coordinates, it) }.zip(row)
-        }
-        val pixelIntensities = bounds.map { row ->
-            row.map { if (it.first) Scene.isWithinTriangle(drawable.coordinates, it.second) else false }
-                .zip(row.map { it.second })
-        }.map { row ->
-            row.map {
-                    if (it.first) 1f / cameraOrigin.distanceTo(it.second) else 0.0f
-            }.toTypedArray()
-        }.toTypedArray()
+        val intersections =
+            BatchScene.calcIntersectionPoints(drawable.coordinates, viewPlane, cameraOrigin)
+        val pixelIntensities = BatchScene.framebufferForTriangle(drawable.coordinates, intersections, cameraOrigin)
+//        val intersection = viewPlane.map { row ->
+//            row.map { Scene.intersectionPointDelta(drawable.coordinates, cameraOrigin, it) }.zip(row)
+//        }.map { row ->
+//            row.map { Scene.intersectionPoint(it.first, it.second, cameraOrigin) }
+//        }
+//        val bounds = intersection.map { row ->
+//            row.map { /*Scene.isWithinBounds(drawable.coordinates, it)*/true }.zip(row)
+//        }
+//        val pixelIntensitie = bounds.map { row ->
+//            row.map { if (it.first) Scene.isWithinTriangle(drawable.coordinates, it.second) else false }
+//                .zip(row.map { it.second })
+//        }.map { row ->
+//            row.map {
+//                    if (it.first) 1f / cameraOrigin.distanceTo(it.second) else 0.0f
+//            }.toTypedArray()
+//        }.toTypedArray()
 
         return Pair(pixelIntensities, drawable.colour)
     }
