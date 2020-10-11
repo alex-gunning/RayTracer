@@ -1,8 +1,6 @@
 ## Ray-Tracer
 A ray-tracer implementation written in a loop and so can function as a graphics engine.
 
-Try it for yourself. Clone the repo and look around :)
-
 ![Triangles](https://raw.githubusercontent.com/alex-gunning/RayTracer/master/images/traced-triangles.png)
 
 Written from scratch in Kotlin with guidence from [https://blog.scottlogic.com/2020/03/10/raytracer-how-to.html]()
