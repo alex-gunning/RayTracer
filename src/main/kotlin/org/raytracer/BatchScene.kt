@@ -2,7 +2,6 @@ package org.raytracer
 
 import com.aparapi.Kernel
 import com.aparapi.Range
-import kotlin.math.pow
 
 class BatchScene {
     companion object {
@@ -11,7 +10,6 @@ class BatchScene {
             viewPlane: Array<Array<Vector>>,
             origin: Vector
         ): Array<Array<Vector>> {
-            val time = System.currentTimeMillis()
             val triangleNormal = triangle.normal()
             val tx = triangleNormal.x
             val ty = triangleNormal.y
@@ -50,7 +48,6 @@ class BatchScene {
             kernel.execute(Range.create2D(size, size))
             kernel.dispose()
 
-            println("CalcIntersectionPoints took ${System.currentTimeMillis() - time}")
             return Array(size) { y ->
                 Array(size) { x ->
                     Vector(
@@ -67,7 +64,6 @@ class BatchScene {
             intersections: Array<Array<Vector>>,
             origin: Point
         ): Array<Array<Float>> {
-            val time = System.currentTimeMillis()
             val cameraOriginX = origin.x
             val cameraOriginY = origin.y
             val cameraOriginZ = origin.z
@@ -169,7 +165,6 @@ class BatchScene {
             kernel.execute(Range.create2D(size, size))
             kernel.dispose()
 
-            println("Framebuffer time ${System.currentTimeMillis() - time}")
             return Array(size) { y ->
                 Array(size) { x ->
                     result[x + y * size]

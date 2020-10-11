@@ -1,7 +1,5 @@
 package org.raytracer
 
-import com.aparapi.Kernel
-import com.aparapi.Range
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
@@ -67,23 +65,4 @@ data class Triangle(val p1: Point, val p2: Point, val p3: Point) {
     }
     // Plane constant "k"
     fun k(): Float = -(this.normal().dot(p1))
-}
-
-
-fun speedAddition() {
-    val size = 251001
-    val a = FloatArray(size) { (Math.random() * 100).toFloat() }
-    val b = FloatArray(size) { (Math.random() * 100).toFloat() }
-    val sum = FloatArray(size)
-
-    val kernel = object: Kernel() {
-        override fun run() {
-            val gid = globalId
-            sum[gid] = a[gid] * b[gid]
-        }
-    }
-
-    kernel.execute(Range.create(size))
-    kernel.dispose()
-    val i = 2
 }

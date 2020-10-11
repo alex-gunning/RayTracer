@@ -70,14 +70,14 @@ fun main() {
     val cameraOrigin = Vector(0.0f, 0.0f, 0.0f)
     val viewPlaneAngles = Scene.buildViewPlaneAngles(
         pixDimension = requiredPixelDimension,
-        pixelSize = 0.0030f,
-//        pixelSize = 0.1f,
+//        pixelSize = 0.0030f,
+        pixelSize = 0.1f,
         yawDegrees = yaw,
         pitchDegrees = pitch
     )
     val triangularObject1 = Triangle(
         Point(0.0f, 0.25f, 1.0f),
-        Point(-0.5f, -0.5f, 1.0f),
+        Point(-0.5f, -0.5f, 2.5f),
         Point(0.5f, -0.5f, 2.0f)
     )
     val triangularObject2 = Triangle(
@@ -88,7 +88,7 @@ fun main() {
     val myScene = Scene(
         listOf(
             Drawable(triangularObject1, RGBColour(180, 0, 180)),
-            Drawable(triangularObject2, RGBColour(0, 200, 0))
+//            Drawable(triangularObject2, RGBColour(0, 200, 0))
         )
     )
     val image = BufferedImage(requiredPixelDimension, requiredPixelDimension, BufferedImage.TYPE_INT_RGB)
@@ -106,15 +106,26 @@ fun main() {
         val pixelIntensities = myScene.calcPixelIntensities(cameraOrigin, viewPlane = viewPlane)
         println("Pix intensity calc time: ${System.currentTimeMillis() - pixTime}")
         val colourTime = System.currentTimeMillis()
-        val rgb = pixelIntensities.flatten().map {
-            arrayOf(
-                (it.first * it.second.r).toInt(),
-                (it.first * it.second.g).toInt(),
-                (it.first * it.second.b).toInt()
-            )
-        }.toTypedArray().flatten()
+        val size = pixelIntensities.size
+        val rgb = IntArray(size*size*3) { i ->
+            val pixel = pixelIntensities[(i / (size * 3))][(i / 3) % size]
+            if (i % 3 == 0) {
+                (pixel.first * pixel.second.r).toInt()
+            } else if (i % 3 == 1) {
+                (pixel.first * pixel.second.g).toInt()
+            } else {
+                (pixel.first * pixel.second.b).toInt()
+            }
+        }
+//        val rgb = pixelIntensities.flatten().map {
+//            arrayOf(
+//                (it.first * it.second.r).toInt(),
+//                (it.first * it.second.g).toInt(),
+//                (it.first * it.second.b).toInt()
+//            )
+//        }.toTypedArray().flatten()
         println("RGB calc time: ${System.currentTimeMillis() - colourTime}")
-        raster.setPixels(0, 0, requiredPixelDimension, requiredPixelDimension, rgb.toIntArray())
+        raster.setPixels(0, 0, requiredPixelDimension, requiredPixelDimension, rgb)
         display(image)
         avgSum += (System.currentTimeMillis() - startTime)
         numSoFar++

@@ -9,7 +9,7 @@ class Scene(
     fun calcPixelIntensities(
         cameraOrigin: Point,
         viewPlane: Array<Array<Vector>>
-    ): List<List<Pair<Float, RGBColour>>> {
+    ): Array<Array<Pair<Float, RGBColour>>> {
         val objectIntersections = sceneObjects.map { drawable ->
             getPixelIntensitiesForTriangle(cameraOrigin, viewPlane, drawable)
         }
@@ -21,23 +21,37 @@ class Scene(
         viewPlane: Array<Array<Vector>>,
         drawable: Drawable
     ): Pair<Array<Array<Float>>, RGBColour> {
-        val intersections =
-            BatchScene.calcIntersectionPoints(drawable.coordinates, viewPlane, cameraOrigin)
-        val pixelIntensities = BatchScene.framebufferForTriangle(drawable.coordinates, intersections, cameraOrigin)
+//        val intersections =
+//            BatchScene.calcIntersectionPoints(drawable.coordinates, viewPlane, cameraOrigin)
+//        val pixelIntensities = BatchScene.framebufferForTriangle(drawable.coordinates, intersections, cameraOrigin)
+        val intersections = viewPlane.map { row ->
+            row.map { Scene.intersectionPointDelta(drawable.coordinates, cameraOrigin, it) }.zip(row)
+        }.map { row ->
+            row.map { Scene.intersectionPoint(it.first, it.second, cameraOrigin) }
+        }
+        val bounds = intersections.map { row ->
+            row.map { Scene.isWithinBounds(drawable.coordinates, it) }.zip(row)
+        }
+        val pixelIntensities = bounds.map { row ->
+            row.map { if (it.first) Scene.isWithinTriangle(drawable.coordinates, it.second) else false }
+                .zip(row.map { it.second })
+        }.map { row ->
+            row.map {
+                    if (it.first) 1f / cameraOrigin.distanceTo(it.second) else 0.0f
+            }.toTypedArray()
+        }.toTypedArray()
 
         return Pair(pixelIntensities, drawable.colour)
     }
 
     // Go through each pixel and return the closest.
-    private fun calcViewWinners(intersections: List<Pair<Array<Array<Float>>, RGBColour>>): List<List<Pair<Float, RGBColour>>> {
-        val time = System.currentTimeMillis()
-        val theList = List(intersections[0].first.size) { y ->
-            List(intersections[0].first.size) { x ->
+    private fun calcViewWinners(intersections: List<Pair<Array<Array<Float>>, RGBColour>>): Array<Array<Pair<Float, RGBColour>>> {
+        val theList = Array(intersections[0].first.size) { y ->
+            Array(intersections[0].first.size) { x ->
                 intersections.fold(Pair(0.0f, RGBColour(0, 0, 0)))
                 { max, element -> if (element.first[y][x] > max.first) Pair(element.first[y][x], element.second) else max }
             }
         }
-        println("CalcViewWinners time ${System.currentTimeMillis() - time}")
         return theList
     }
 
