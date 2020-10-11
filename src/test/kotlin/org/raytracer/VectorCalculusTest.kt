@@ -40,7 +40,7 @@ class VectorCalculusTest {
     fun vectorDot() {
         val a = Vector(1.0f, 2.0f, 3.0f)
         val b = Vector(2.0f, 1.0f, 3.0f)
-        assertEquals(a.dot(b), (13).toDouble(), 0.0f)
+        assertEquals(a.dot(b), 13f, 0.0f)
     }
 
     @Test
@@ -55,7 +55,7 @@ class VectorCalculusTest {
     @DisplayName("Vector length")
     fun vectorLength() {
         val a = Vector(0.0f, 3.0f, -4.0f)
-        assertEquals(a.length(), 5.0f, 0.0)
+        assertEquals(a.length(), 5.0f, 0.0f)
     }
 
     @Test

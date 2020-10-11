@@ -88,7 +88,7 @@ fun main() {
     val myScene = Scene(
         listOf(
             Drawable(triangularObject1, RGBColour(180, 0, 180)),
-//            Drawable(triangularObject2, RGBColour(0, 200, 0))
+            Drawable(triangularObject2, RGBColour(0, 200, 0))
         )
     )
     val image = BufferedImage(requiredPixelDimension, requiredPixelDimension, BufferedImage.TYPE_INT_RGB)
@@ -113,7 +113,7 @@ fun main() {
                 (it.first * it.second.b).toInt()
             )
         }.toTypedArray().flatten()
-        println("Pix intensity calc time: ${System.currentTimeMillis() - colourTime}")
+        println("RGB calc time: ${System.currentTimeMillis() - colourTime}")
         raster.setPixels(0, 0, requiredPixelDimension, requiredPixelDimension, rgb.toIntArray())
         display(image)
         avgSum += (System.currentTimeMillis() - startTime)
