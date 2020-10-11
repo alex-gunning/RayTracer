@@ -1,12 +1,7 @@
 package org.raytracer
 
-import java.awt.BorderLayout
-import java.awt.image.BufferedImage
-import java.awt.image.WritableRaster
-import javax.swing.ImageIcon
-import javax.swing.JFrame
-import javax.swing.JLabel
-import javax.swing.WindowConstants
+import com.aparapi.Kernel
+import com.aparapi.Range
 
 data class Drawable(val coordinates: Triangle, val colour: RGBColour)
 data class RGBColour(val r: Int, val g: Int, val b: Int)
@@ -14,46 +9,66 @@ data class RGBColour(val r: Int, val g: Int, val b: Int)
 class Scene(
     val sceneObjects: List<Drawable> = listOf(),
 ) {
-    fun calcPixelIntensities(cameraOrigin: Point, viewPlane: Array<Array<Vector>>): List<List<Pair<Double, RGBColour>>> {
+    fun calcPixelIntensities(
+        cameraOrigin: Point,
+        viewPlane: Array<Array<Vector>>
+    ): List<List<Pair<Float, RGBColour>>> {
         val objectIntersections = sceneObjects.map { drawable ->
-            val intersections = viewPlane.map { row ->
-                row.map { Scene.intersectionPointDelta(drawable.coordinates, cameraOrigin, it) }.zip(row)
-            }.map { row ->
-                row.map { Scene.intersectionPoint(it.first, it.second, cameraOrigin) }
-            }
-            val bounds = intersections.map { row ->
-                row.map { Scene.isWithinBounds(drawable.coordinates, it) }.zip(row)
-            }
-            val pixelIntensities = bounds.map { row ->
-                row.map { if (it.first) Scene.isWithinTriangle(drawable.coordinates, it.second) else false }
-                   .zip(row.map { it.second })
-            }.map { row ->
-                row.map {
-                    Pair(
-                        if (it.first) 1 / cameraOrigin.distanceTo(it.second) else 0.0,
-                        drawable.colour
-                    )
-                }
-            }
-            pixelIntensities
+            getPixelIntensitiesForTriangle(cameraOrigin, viewPlane, drawable)
         }
         return calcViewWinners(objectIntersections)
     }
 
-    // Go through each pixel and return the closest.
-    private fun calcViewWinners(intersections: List<List<List<Pair<Double, RGBColour>>>>): List<List<Pair<Double, RGBColour>>> {
-        return List(intersections[0].size) { y ->
-            List(intersections[0].size) { x ->
-                intersections.fold(Pair(0.0, RGBColour(0,0,0)))
-                    { max, element -> if(element[y][x].first > max.first) element[y][x] else max }
+    fun getPixelIntensitiesForTriangle(
+        cameraOrigin: Point,
+        viewPlane: Array<Array<Vector>>,
+        drawable: Drawable
+    ): List<List<Pair<Float, RGBColour>>> {
+        val intersectionsDelta = Scene.batchIntersectionPointDeltas(drawable.coordinates, cameraOrigin, viewPlane)
+//            .mapIndexed { rowIdx, row -> row.mapIndexed { colIdx, item -> Pair(item, viewPlane[rowIdx][colIdx]) } }
+
+//        val intersectionsDelta2 = viewPlane.map { row ->
+//            row.map { Scene.intersectionPointDelta(drawable.coordinates, cameraOrigin, it) }.zip(row)
+////            Scene.batchIntersectionPointDeltas(drawable.coordinates, cameraOrigin, row).zip(row)
+//        }
+        val intersections =
+            Scene.batchIntersectionPoint(intersectionsDelta, viewPlane.map { it.toList() }, cameraOrigin)
+//        val intersections = intersectionsDelta.mapIndexed { idx, row -> batchIntersectionPoint(row, viewPlane[idx].toList(), cameraOrigin)}
+//        val intersections = intersectionsDelta.map { row ->
+//            row.map { Scene.intersectionPoint(it.first, it.second, cameraOrigin) }
+//        }
+        val bounds = intersections.map { row ->
+            row.map { Scene.isWithinBounds(drawable.coordinates, it) }.zip(row)
+        }
+        val pixelIntensities = bounds.map { row ->
+            row.map { Scene.isWithinTriangle(drawable.coordinates, it.second) }
+                .zip(row.map { it.second })
+        }.map { row ->
+            row.map {
+                Pair(
+                    if (it.first) 1 / cameraOrigin.distanceTo(it.second) else 0.0f,
+                    drawable.colour
+                )
             }
         }
+        return pixelIntensities
+    }
+
+    // Go through each pixel and return the closest.
+    private fun calcViewWinners(intersections: List<List<List<Pair<Float, RGBColour>>>>): List<List<Pair<Float, RGBColour>>> {
+        val theList = List(intersections[0].size) { y ->
+            List(intersections[0].size) { x ->
+                intersections.fold(Pair(0.0f, RGBColour(0, 0, 0)))
+                { max, element -> if (element[y][x].first > max.first) element[y][x] else max }
+            }
+        }
+        return theList
     }
 
     companion object {
         fun buildViewPlaneAngles(
             pixDimension: Int,
-            pixelSize: Double = 0.5,
+            pixelSize: Float = 0.5f,
             pitchDegrees: Int = 0,
             yawDegrees: Int = 0
         ): Array<Array<Vector>> {
@@ -74,7 +89,7 @@ class Scene(
         private fun angle(
             x: Int,
             y: Int,
-            pixelSize: Double,
+            pixelSize: Float,
             pixDimension: Int,
             pitchDegrees: Int,
             yawDegrees: Int
@@ -82,20 +97,101 @@ class Scene(
             val focus = Vector(
                 x = pixelSize * (x - pixDimension / 2),
                 y = pixelSize * (y - pixDimension / 2),
-                z = 1.0
+                z = 1.0f
             )
             return focus.rotY(yawDegrees).rotX(pitchDegrees)
         }
 
-        fun intersectionPoint(delta: Double, slope: Vector, origin: Vector) =
+        fun intersectionPoint(delta: Float, slope: Vector, origin: Vector) =
             Vector(
                 x = delta * slope.x + origin.x,
                 y = delta * slope.y + origin.y,
                 z = delta * slope.z + origin.z
             )
 
-        fun intersectionPointDelta(triangle: Triangle, origin: Vector, slope: Vector) =
-            -((triangle.normal().dot(origin) + triangle.k()) / triangle.normal().dot(slope))
+        fun batchIntersectionPoint(
+            deltas: FloatArray,
+            slope: List<List<Vector>>,
+            origin: Vector
+        ): List<List<Vector>> {
+            val size = slope.size
+//            val deltas = FloatArray(size * size) { i -> delta[i / size][i % size] }
+            val (ox, oy, oz) = origin
+            val slopeX = FloatArray(size * size) { i -> slope[i / size][i % size].x }
+            val slopeY = FloatArray(size * size) { i -> slope[i / size][i % size].y }
+            val slopeZ = FloatArray(size * size) { i -> slope[i / size][i % size].z }
+
+            val resultX = FloatArray(size * size)
+            val resultY = FloatArray(size * size)
+            val resultZ = FloatArray(size * size)
+
+            val kernel = object : Kernel() {
+                override fun run() {
+                    val IDx = getGlobalId(0)
+                    val IDy = getGlobalId(1)
+                    val idx = (IDx + IDy * getGlobalSize(0))
+                    resultX[idx] = deltas[idx] * slopeX[idx] + ox
+                    resultY[idx] = deltas[idx] * slopeY[idx] + oy
+                    resultZ[idx] = deltas[idx] * slopeZ[idx] + oz
+                }
+            }
+            kernel.setExecutionModeWithoutFallback(Kernel.EXECUTION_MODE.GPU)
+
+            kernel.execute(Range.create2D(size, size))
+            kernel.dispose()
+            return List(size) { y ->
+                List(size) { x ->
+                    Vector(
+                        resultX[x + y * size],
+                        resultY[x + y * size],
+                        resultZ[x + y * size]
+                    )
+                }
+            }
+        }
+
+        fun intersectionPointDelta(triangle: Triangle, origin: Vector, slope: Vector): Float {
+            val triangleNormal = triangle.normal()
+            return -((triangleNormal.dot(origin) + triangle.k()) / triangleNormal.dot(slope))
+        }
+
+
+        fun batchIntersectionPointDeltas(
+            triangle: Triangle,
+            origin: Vector,
+            slope: Array<Array<Vector>>
+        ): FloatArray {
+            val triangleNormal = triangle.normal()
+            val tx = triangleNormal.x
+            val ty = triangleNormal.y
+            val tz = triangleNormal.z
+            val k = triangle.k()
+            val numerator = triangleNormal.dot(origin) + k
+
+            val result = FloatArray(slope.size * slope.size)
+            val rowSize = slope.first().size
+            val x = FloatArray(slope.size * slope.size) { i -> slope[i / rowSize][i % rowSize].x }
+            val y = FloatArray(slope.size * slope.size) { i -> slope[i / rowSize][i % rowSize].y }
+            val z = FloatArray(slope.size * slope.size) { i -> slope[i / rowSize][i % rowSize].z }
+
+            val kernel = object : Kernel() {
+                override fun run() {
+                    val IDx = getGlobalId(0)
+                    val IDy = getGlobalId(1)
+                    val denominator = tx * x[(IDx + IDy * getGlobalSize(0))] +
+                            ty * y[(IDx + IDy * getGlobalSize(0))] +
+                            tz * z[(IDx + IDy * getGlobalSize(0))]
+                    result[IDx+(IDy * rowSize)] = -(numerator / denominator)
+                }
+            }
+            kernel.setExecutionModeWithoutFallback(Kernel.EXECUTION_MODE.GPU)
+
+            kernel.execute(Range.create2D(slope.size, slope.size))
+            kernel.dispose()
+            return result
+//            val theList = List(size = rowSize) { y -> List(size = rowSize) { x -> result[x + (y * rowSize)] } }
+//            return theList
+        }
 
         // A weak sanity-check
         fun isWithinBounds(triangle: Triangle, point: Point): Boolean {
@@ -143,74 +239,4 @@ class Scene(
     }
 }
 
-
-fun pixelRepresentation(intensity: Double): Char {
-    if (intensity in 0.01..0.3) return '0'
-    if (intensity in 0.3..0.4) return '1'
-    if (intensity in 0.4..0.45) return '2'
-    if (intensity in 0.45..0.50) return '3'
-    if (intensity in 0.50..0.55) return '4'
-    if (intensity in 0.55..0.60) return '5'
-    if (intensity in 0.60..0.65) return '6'
-    if (intensity in 0.65..0.70) return '7'
-    if (intensity in 0.70..1.00) return '8'
-    return '.'
-}
-//    val display = pixelIntensities.map { row -> row.map { pixelRepresentation(it) } }
-//    display.forEach{ row -> row.map { print(it) }
-//        println(" ")
-//    }
-
-private var frame: JFrame? = null
-private var label: JLabel? = null
-fun display(image: BufferedImage) {
-    if (frame == null) {
-        frame = JFrame()
-        frame!!.title = "Raytraced Image"
-        frame!!.setSize(image.width, image.height)
-        frame!!.defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
-        label = JLabel()
-        label!!.icon = ImageIcon(image)
-        frame!!.contentPane.add(label, BorderLayout.CENTER)
-        frame!!.setLocationRelativeTo(null)
-        frame!!.pack()
-        frame!!.isVisible = true
-    } else label!!.icon = ImageIcon(image)
-}
-
-fun main() {
-    val requiredPixelDimension = 801
-    val cameraOrigin = Vector(0.0, 0.0, 0.0)
-    val viewPlaneAngles = Scene.buildViewPlaneAngles(pixDimension = requiredPixelDimension, pixelSize = 0.0015)
-    val triangularObject1 = Triangle(
-        Point(0.0, 0.25, 1.0),
-        Point(-0.5, -0.5, 1.5),
-        Point(0.5, -0.5, 2.0)
-    )
-    val triangularObject2 = Triangle(
-        Point(0.7, 1.0, 2.5),
-        Point(0.3, 0.5, 2.0),
-        Point(1.1, 0.5, 2.5)
-    )
-    val myScene = Scene(
-        listOf(
-            Drawable(triangularObject1, RGBColour(180, 0, 180)),
-            Drawable(triangularObject2, RGBColour(0, 200, 0))
-        )
-    )
-    val pixelIntensities = myScene.calcPixelIntensities(cameraOrigin, viewPlaneAngles)
-    val rgb = pixelIntensities.flatten().map {
-        arrayOf(
-            (it.first * it.second.r).toInt(),
-            (it.first * it.second.g).toInt(),
-            (it.first * it.second.b).toInt()
-        )
-    }.toTypedArray().flatten()
-
-    val image = BufferedImage(requiredPixelDimension, requiredPixelDimension, BufferedImage.TYPE_INT_RGB)
-    val raster: WritableRaster = image.raster
-    raster.setPixels(0, 0, requiredPixelDimension, requiredPixelDimension, rgb.toIntArray())
-    display(image)
-    val a = 3
-}
 
